@@ -76,7 +76,7 @@ def anthropic_to_openai_messages(request: CreateMessageRequest) -> \
                         "type": "function"
                     })
                 elif item_type == "tool_result":
-                    function_name = content_item["tool_use_id"].split("_")[-1]
+                    function_name = content_item["tool_use_id"].split("#")[-1]
                     openai_messages.append({
                         "role": "tool",
                         "name": function_name,
@@ -144,8 +144,8 @@ def openai_to_anthropic_response(openai_response: Any, model: str) -> dict[str, 
         for tool_call in choice.message.tool_calls:
             content.append({
                 "type": "tool_use",
-                "id": f"toolu_{tool_call.id}_{tool_call.function.name}",
-                "input": tool_call.function.arguments,
+                "id": f"toolu_{tool_call.id}#{tool_call.function.name}",
+                "input": json.loads(tool_call.function.arguments),
                 "name": tool_call.function.name
             })
     response = {
