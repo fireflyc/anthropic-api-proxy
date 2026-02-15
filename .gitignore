@@ -1,0 +1,23 @@
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+
+*.log
+
+.pytest_cache/
+**/__pycache__/
+
+.trae
+.cursor
+CLAUDE.local.md
+CLAUDE.md
+.python-version
+uv.lock
+/.claude/settings.local.json
+dev/mysql_data
