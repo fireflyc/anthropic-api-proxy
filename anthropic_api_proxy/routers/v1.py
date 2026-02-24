@@ -18,13 +18,20 @@ router = APIRouter()
 LOGGER = logging.getLogger(__name__)
 
 
+def get_model_name(model_name: str):
+    if model_name.startswith("c-"):
+        return model_name[2:]
+    else:
+        return settings.MODEL_MAPPING.get(model_name,
+                                          settings.MODEL_MAPPING.get("default"))
+
+
 @router.post("/messages", response_model=None)
 async def create_message(request: CreateMessageRequest, headers: ClaudeHeaders = Depends(require_claude_headers)) -> \
         dict[str, Any] | StreamingResponse:
     """Create a message, compatible with Claude POST /v1/messages. Returns SSE streaming response when stream=true, otherwise returns complete JSON."""
 
-    request.model = settings.MODEL_MAPPING.get(request.model,
-                                               settings.MODEL_MAPPING.get("default"))
+    request.model = get_model_name(request.model)
     if request.stream:
         # Streaming response - use async client
         async_client = get_async_openai_client()
@@ -42,10 +49,10 @@ async def create_message(request: CreateMessageRequest, headers: ClaudeHeaders =
         client = get_openai_client()
         return await create_message_sync(request=request, client=client, api_key=headers.x_api_key)
 
+
 @router.post("/messages/count_tokens", response_model=CountTokensResponse)
-async def count_tokens(request: CountTokensRequest,headers: ClaudeHeaders = Depends(require_claude_headers)) -> CountTokensResponse:
-    """统计消息 token 数，兼容 Claude POST /v1/messages/count_tokens。"""
-    request.model = settings.MODEL_MAPPING.get(request.model,
-                                               settings.MODEL_MAPPING.get("default"))
+async def count_tokens(request: CountTokensRequest,
+                       headers: ClaudeHeaders = Depends(require_claude_headers)) -> CountTokensResponse:
+    request.model = get_model_name(request.model)
     client = get_openai_client()
     return await count_message_tokens(request=request, client=client, api_key=headers.x_api_key)

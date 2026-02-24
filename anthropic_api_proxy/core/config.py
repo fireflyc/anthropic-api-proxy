@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application configuration，environment prefix is API_PROXY_。"""
 
     OPEN_AI_URL: str
-    MODEL_MAPPING: dict[str, str] = {"default": "Pro/zai-org/GLM-5", "kimi":"Pro/moonshotai/Kimi-K2.5"}
+    MODEL_MAPPING: dict[str, str] = {"default": "Pro/zai-org/GLM-5"}
 
 
 @lru_cache

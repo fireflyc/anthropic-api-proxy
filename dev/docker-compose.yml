@@ -3,5 +3,7 @@ version: '3.8'
 services:
   api_proxy:
     build: ../
+    volumes:
+      - ./logs:/app/logs
     ports:
       - "8080:8080"
