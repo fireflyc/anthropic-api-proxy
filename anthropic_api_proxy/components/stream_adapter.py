@@ -178,9 +178,11 @@ class StreamAdapter:
             List of events to emit, or None if the chunk should be skipped
         """
         choice = chunk.choices[0]
-        self._input_tokens += chunk.usage.prompt_tokens
-        self._output_tokens += chunk.usage.completion_tokens
 
+        #Update tokens
+        if chunk.usage is not None:
+            self._input_tokens = chunk.usage.prompt_tokens
+            self._output_tokens = chunk.usage.completion_tokens
         if choice.finish_reason is not None:
             self._stop_reason = STOP_REASON_MAPPING.get(
                 choice.finish_reason, self._stop_reason

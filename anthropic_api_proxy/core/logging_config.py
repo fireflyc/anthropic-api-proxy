@@ -1,6 +1,9 @@
 import logging
 import logging.config
 
+# Logger name constant for request/response logging
+REQUEST_RESPONSE_LOGGER = "anthropic_api_proxy.request_response"
+
 LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -9,7 +12,7 @@ LOGGING_CONFIG = {
             "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         },
         "detailed": {
-            "format": "%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s",
+            "format": "%(asctime)s - %(funcName)s - %(message)s",
         },
     },
     "handlers": {
@@ -18,6 +21,14 @@ LOGGING_CONFIG = {
             "class": "logging.StreamHandler",
             "formatter": "default",
             "stream": "ext://sys.stdout",
+        },
+        "request_response_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "formatter": "detailed",
+            "filename": "logs/request_response.log",
+            "mode": "a",
+            "encoding": "utf-8",
         }
     },
     "loggers": {
@@ -28,6 +39,11 @@ LOGGING_CONFIG = {
         },
         "anthropic_api_proxy": {
             "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        REQUEST_RESPONSE_LOGGER: {
+            "handlers": ["request_response_file"],
             "level": "DEBUG",
             "propagate": False,
         },

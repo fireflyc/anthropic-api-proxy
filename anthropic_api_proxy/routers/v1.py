@@ -8,8 +8,10 @@ from fastapi.responses import StreamingResponse
 from anthropic_api_proxy.components.claude_headers import ClaudeHeaders, require_claude_headers
 from anthropic_api_proxy.components.openai_client import get_async_openai_client, get_openai_client
 from anthropic_api_proxy.core.config import settings
+from anthropic_api_proxy.schemas.count_tokens import CountTokensRequest, CountTokensResponse
 from anthropic_api_proxy.schemas.messages import CreateMessageRequest
 from anthropic_api_proxy.services.message_service import create_message_stream, create_message_sync
+from anthropic_api_proxy.services.tokens_services import count_message_tokens
 
 router = APIRouter()
 
@@ -20,10 +22,9 @@ LOGGER = logging.getLogger(__name__)
 async def create_message(request: CreateMessageRequest, headers: ClaudeHeaders = Depends(require_claude_headers)) -> \
         dict[str, Any] | StreamingResponse:
     """Create a message, compatible with Claude POST /v1/messages. Returns SSE streaming response when stream=true, otherwise returns complete JSON."""
+
     request.model = settings.MODEL_MAPPING.get(request.model,
                                                settings.MODEL_MAPPING.get("default"))
-
-    LOGGER.info(f"===Request===\n{request.model_dump()}\n===Request===\n")
     if request.stream:
         # Streaming response - use async client
         async_client = get_async_openai_client()
@@ -40,3 +41,11 @@ async def create_message(request: CreateMessageRequest, headers: ClaudeHeaders =
         # Synchronous response - use sync client
         client = get_openai_client()
         return await create_message_sync(request=request, client=client, api_key=headers.x_api_key)
+
+@router.post("/messages/count_tokens", response_model=CountTokensResponse)
+async def count_tokens(request: CountTokensRequest,headers: ClaudeHeaders = Depends(require_claude_headers)) -> CountTokensResponse:
+    """统计消息 token 数，兼容 Claude POST /v1/messages/count_tokens。"""
+    request.model = settings.MODEL_MAPPING.get(request.model,
+                                               settings.MODEL_MAPPING.get("default"))
+    client = get_openai_client()
+    return await count_message_tokens(request=request, client=client, api_key=headers.x_api_key)
