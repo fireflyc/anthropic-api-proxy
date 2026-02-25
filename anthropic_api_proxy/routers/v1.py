@@ -22,8 +22,10 @@ def get_model_name(model_name: str):
     if model_name.startswith("c-"):
         return model_name[2:]
     else:
-        return settings.MODEL_MAPPING.get(model_name,
-                                          settings.MODEL_MAPPING.get("default"))
+        for original_name, mapping_name in settings.MODEL_MAPPING.items():
+            if original_name in model_name.lower():
+                return mapping_name
+        return settings.MODEL_MAPPING.get("default")
 
 
 @router.post("/messages", response_model=None)

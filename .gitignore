@@ -21,3 +21,4 @@ CLAUDE.md
 uv.lock
 /.claude/settings.local.json
 dev/mysql_data
+.env
