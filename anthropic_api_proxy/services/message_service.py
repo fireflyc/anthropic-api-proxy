@@ -24,7 +24,7 @@ async def create_message_sync(request: CreateMessageRequest, client: OpenAI, api
     try:
         trace_log_request(openai_params)
         openai_response = client.chat.completions.create(**openai_params)
-        trace_log_response(openai_response)
+        trace_log_response(openai_response.model_dump())
         anthropic_response = openai_to_anthropic_response(openai_response=openai_response, model=request.model)
         return anthropic_response
     except APIStatusError as e:
