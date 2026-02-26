@@ -173,16 +173,21 @@ class StreamAdapter:
     def convert_chunk(self, chunk: ChatCompletionChunk) -> Optional[List[Dict[str, Any]]]:
         """
         Convert a single OpenAI chunk to Anthropic event format
-        
+
         Returns:
             List of events to emit, or None if the chunk should be skipped
         """
-        choice = chunk.choices[0]
-
-        #Update tokens
+        # Update tokens from usage (handles the final chunk with usage but empty choices)
         if chunk.usage is not None:
             self._input_tokens = chunk.usage.prompt_tokens
             self._output_tokens = chunk.usage.completion_tokens
+
+        # Handle final chunk with usage but empty choices array
+        if len(chunk.choices) == 0:
+            return None
+
+        choice = chunk.choices[0]
+
         if choice.finish_reason is not None:
             self._stop_reason = STOP_REASON_MAPPING.get(
                 choice.finish_reason, self._stop_reason

@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import AsyncGenerator, Any
 
 from openai import AsyncOpenAI, OpenAI, APIStatusError
@@ -22,9 +23,10 @@ async def create_message_sync(request: CreateMessageRequest, client: OpenAI, api
     client.api_key = api_key
 
     try:
-        trace_log_request(openai_params)
+        request_id = f"req-{uuid.uuid4()}"
+        trace_log_request(request_id, openai_params)
         openai_response = client.chat.completions.create(**openai_params)
-        trace_log_response(openai_response.model_dump())
+        trace_log_response(request_id, openai_response.model_dump())
         anthropic_response = openai_to_anthropic_response(openai_response=openai_response, model=request.model)
         return anthropic_response
     except APIStatusError as e:
@@ -50,16 +52,18 @@ async def create_message_stream(request: CreateMessageRequest, async_client: Asy
         AsyncGenerator[str, None]:
     openai_params = anthropic_to_openai_req(request=request)
     openai_params["stream"] = True
+    openai_params["stream_options"] = {"include_usage": True}
 
     original_api_key = async_client.api_key
     async_client.api_key = api_key
     stream_adapter = StreamAdapter(request.model)
-    
+
+    request_id = f"req-{uuid.uuid4()}"
     # Create accumulator for streaming response logging
-    accumulator = StreamResponseAccumulator()
-    
+    accumulator = StreamResponseAccumulator(request_id)
+
     try:
-        trace_log_request(openai_params)
+        trace_log_request(request_id, openai_params)
         stream = await async_client.chat.completions.create(**openai_params)
 
         yield stream_adapter.first_event()

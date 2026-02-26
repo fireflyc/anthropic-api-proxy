@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any
 from copy import deepcopy
@@ -7,11 +8,12 @@ from anthropic_api_proxy.core.logging_config import REQUEST_RESPONSE_LOGGER
 REQUEST_RESPONSE_LOG = logging.getLogger(REQUEST_RESPONSE_LOGGER)
 
 
-def trace_log_request(params: dict[str, Any], include_tools: bool = True) -> None:
+def trace_log_request(request_id:str, params: dict[str, Any], include_tools: bool = True) -> None:
     """
     Log request parameters.
     
     Args:
+        request_id (str): request id
         params: The request parameters to log
         include_tools: Whether to include tools in the log (default: True)
     """
@@ -23,24 +25,26 @@ def trace_log_request(params: dict[str, Any], include_tools: bool = True) -> Non
             params_copy["tools"] = f"<{len(params_copy['tools'])} tools omitted>"
     else:
         params_copy = params
-    
-    REQUEST_RESPONSE_LOG.info(f"Request params: {params_copy}")
+    REQUEST_RESPONSE_LOG.info(f"> {request_id} {json.dumps(params_copy, ensure_ascii=False)}")
 
 
-def trace_log_response(response: Any) -> None:
+def trace_log_response(request_id:str, response: Any) -> None:
     """
     Log response data.
     
     Args:
+        request_id (str): request id
         response: The response data to log
     """
-    REQUEST_RESPONSE_LOG.info(f"Response: {response}")
+    response_copy = deepcopy(response)
+    REQUEST_RESPONSE_LOG.info(f"< {request_id} {json.dumps(response_copy, ensure_ascii=False)}")
 
 
 class StreamResponseAccumulator:
     """Accumulator for OpenAI streaming responses."""
     
-    def __init__(self):
+    def __init__(self, request_id:str):
+        self.request_id = request_id
         self.accumulated_content = ""
         self.accumulated_role = None
         self.accumulated_tool_calls = []
@@ -109,4 +113,4 @@ class StreamResponseAccumulator:
     def log_accumulated_response(self) -> None:
         """Log the accumulated streaming response."""
         accumulated_response = self.get_accumulated_response()
-        trace_log_response(accumulated_response)
+        trace_log_response(self.request_id, accumulated_response)
