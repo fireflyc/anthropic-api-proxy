@@ -58,6 +58,7 @@ def anthropic_to_openai_messages(request: CreateMessageRequest) -> \
             text_content = None
             reasoning_content = None
             tool_calls = []
+            image_items = []
 
             for content_item in content:
                 item_type = content_item.get("type")
@@ -83,6 +84,19 @@ def anthropic_to_openai_messages(request: CreateMessageRequest) -> \
                         "tool_call_id": content_item["tool_use_id"],
                         "content": content_item["content"],
                     })
+                elif item_type == "image":
+                    source = content_item.get("source", {})
+                    image_data = source.get("data")
+                    media_type = source.get("media_type", "image/jpeg")
+                    if image_data:
+                        # 如果 image_data 不包含 data:image/...;base64, 前缀，需要添加
+                        if not image_data.startswith("data:image/"):
+                            # 确保 base64 数据有正确的 media type 前缀
+                            image_data = f"data:{media_type};base64,{image_data}"
+                        image_items.append({
+                            "type": "image_url",
+                            "image_url": {"url": image_data}
+                        })
 
             if tool_calls:
                 openai_messages.append({
@@ -91,10 +105,17 @@ def anthropic_to_openai_messages(request: CreateMessageRequest) -> \
                     "reasoning_content": reasoning_content,
                     "tool_calls": tool_calls
                 })
-            elif text_content is not None or reasoning_content is not None:
+            elif text_content is not None or reasoning_content is not None or image_items:
+                openai_content = text_content
+                if image_items:
+                    if isinstance(openai_content, str):
+                        openai_content = [{"type": "text", "text": openai_content}]
+                    elif openai_content is None:
+                        openai_content = []
+                    openai_content.extend(image_items)
                 openai_messages.append({
                     "role": role,
-                    "content": text_content,
+                    "content": openai_content,
                     "reasoning_content": reasoning_content
                 })
         else:
